@@ -247,7 +247,7 @@ RETURN p
 
 ## 5. API Design Summary
 
-Base URL: `http://localhost:8000`
+Base URL: `http://localhost:8080` (port 8000 is reserved by Windows on this machine)
 
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
@@ -362,7 +362,7 @@ FRONTEND_URL=http://localhost:3000
 
 ### Frontend `.env`
 ```
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 ---
@@ -374,6 +374,7 @@ VITE_API_BASE_URL=http://localhost:8000
 - Build one phase at a time — do not skip ahead
 - Ask for clarification if requirements are ambiguous
 - Never store passwords in plain text
+- **Never run any git command (commit, push, branch, reset, etc.) unless the user explicitly asks you to**
 
 ### Python (Backend)
 - Use `async` functions in FastAPI routes
@@ -403,9 +404,9 @@ VITE_API_BASE_URL=http://localhost:8000
 
 > **UPDATE THIS SECTION** when starting each new phase.
 
-**Current Phase:** Phase 0 — Not Started  
-**Last Completed:** Nothing yet  
-**Next Task:** Initialize project structure
+**Current Phase:** Phase 2 — Database Connection & Health Check (Complete)  
+**Last Completed:** AsyncDriver with pool-10, `get_db()` context manager, all indexes, `/health` endpoint, LoginPage status UI  
+**Next Task:** Phase 3 — Auth (register, login, JWT, self-Person node)
 
 ---
 

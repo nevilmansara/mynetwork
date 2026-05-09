@@ -24,10 +24,11 @@ Login: `neo4j` / `mynetwork123`
 cd backend
 cp .env.example .env          # Edit .env if needed
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --port 8080 --reload
 ```
-API will be available at: http://localhost:8000  
-API Docs: http://localhost:8000/docs
+API will be available at: http://localhost:8080  
+API Docs: http://localhost:8080/docs  
+> Note: port 8000 is reserved by Windows on this machine; use 8080 instead.
 
 ### 3. Start the Frontend
 ```bash

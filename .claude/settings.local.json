@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse -Path \"D:\\\\mynetwork\" -Exclude \"node_modules\",\"dist\",\".git\" | Where-Object { $_.FullName -notmatch \"node_modules|dist|\\\\.git\" } | Select-Object FullName | Sort-Object FullName)",
+      "PowerShell(Receive-Job *)",
+      "PowerShell(netstat *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(python -c \"import socket; s = socket.socket\\(\\); s.bind\\(\\('127.0.0.1', 8000\\)\\); s.close\\(\\); print\\('Port 8000 bindable on 127.0.0.1'\\)\" 2>&1)",
+      "PowerShell(Get-Job *)",
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c cd /d D:\\\\mynetwork\\\\backend && python -m uvicorn main:app --host 0.0.0.0 --port 8080 > D:\\\\mynetwork\\\\backend\\\\uvicorn.log 2>&1\" -WindowStyle Minimized; Start-Sleep -Seconds 6; Get-Content \"D:\\\\mynetwork\\\\backend\\\\uvicorn.log\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}
