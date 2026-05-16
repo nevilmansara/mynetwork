@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 
 class UserRegister(BaseModel):
@@ -16,4 +17,11 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: str
-    my_person_id: str | None = None
+    my_person_id: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

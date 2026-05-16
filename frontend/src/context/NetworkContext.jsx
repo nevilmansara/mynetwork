@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
+import { peopleService } from '../services/peopleService'
 
 const NetworkContext = createContext(null)
 
@@ -6,34 +7,68 @@ export function NetworkProvider({ children }) {
   const [people, setPeople] = useState([])
   const [connections, setConnections] = useState([])
   const [graphData, setGraphData] = useState({ nodes: [], links: [] })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const loadNetwork = async () => {
-    // TODO: implement in Phase 3
-  }
+  const loadPeople = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await peopleService.getAll()
+      setPeople(res.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load people')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const addPerson = async (data) => {
-    // TODO: implement in Phase 3
-  }
+  const loadNetwork = useCallback(async () => {
+    await loadPeople()
+    // connections + graphData loaded in Phase 5
+  }, [loadPeople])
 
-  const updatePerson = async (id, data) => {
-    // TODO: implement in Phase 3
-  }
+  const addPerson = useCallback(async (data) => {
+    const res = await peopleService.create(data)
+    setPeople((prev) => [...prev, res.data])
+    return res.data
+  }, [])
 
-  const deletePerson = async (id) => {
-    // TODO: implement in Phase 3
-  }
+  const updatePerson = useCallback(async (id, data) => {
+    const res = await peopleService.update(id, data)
+    setPeople((prev) => prev.map((p) => (p.id === id ? res.data : p)))
+    return res.data
+  }, [])
 
-  const addConnection = async (data) => {
-    // TODO: implement in Phase 3
-  }
+  const deletePerson = useCallback(async (id) => {
+    await peopleService.delete(id)
+    setPeople((prev) => prev.filter((p) => p.id !== id))
+  }, [])
 
-  const deleteConnection = async (id) => {
-    // TODO: implement in Phase 3
-  }
+  const addConnection = useCallback(async (_data) => {
+    // implemented in Phase 5
+  }, [])
+
+  const deleteConnection = useCallback(async (_id) => {
+    // implemented in Phase 5
+  }, [])
 
   return (
     <NetworkContext.Provider
-      value={{ people, connections, graphData, loadNetwork, addPerson, updatePerson, deletePerson, addConnection, deleteConnection }}
+      value={{
+        people,
+        connections,
+        graphData,
+        loading,
+        error,
+        loadPeople,
+        loadNetwork,
+        addPerson,
+        updatePerson,
+        deletePerson,
+        addConnection,
+        deleteConnection,
+      }}
     >
       {children}
     </NetworkContext.Provider>

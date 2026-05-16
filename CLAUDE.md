@@ -404,9 +404,9 @@ VITE_API_BASE_URL=http://localhost:8080
 
 > **UPDATE THIS SECTION** when starting each new phase.
 
-**Current Phase:** Phase 2 — Database Connection & Health Check (Complete)  
-**Last Completed:** AsyncDriver with pool-10, `get_db()` context manager, all indexes, `/health` endpoint, LoginPage status UI  
-**Next Task:** Phase 3 — Auth (register, login, JWT, self-Person node)
+**Current Phase:** Phase 4 — People CRUD (Complete)  
+**Last Completed:** PersonCreate/Update/Response models, people_service (get_all, get_by_id, create, update, delete with ownership scoping), /people router, peopleService.js, usePeople hook, NetworkContext with loading/error state, PersonForm (modal + tag-input skills), PersonCard (avatar, skill badges, hover edit/delete), PeoplePage (grid, search filter, skeleton, empty state), PersonProfile (full detail + edit), PersonDetailPage (fetch by ID, back nav)  
+**Next Task:** Phase 5 — Connections CRUD (link people, list/delete connections)
 
 ---
 

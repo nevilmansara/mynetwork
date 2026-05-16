@@ -40,6 +40,11 @@ App will be available at: http://localhost:5173
 
 ---
 
+## How to Run
+See **[RUNNING.md](RUNNING.md)** for the complete step-by-step guide — first-time setup, starting all three services, manual test flow, and troubleshooting.
+
+---
+
 ## Project Structure
 See `ARCHITECTURE.md` for full details.
 

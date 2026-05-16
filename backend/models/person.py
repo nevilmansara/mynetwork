@@ -38,5 +38,6 @@ class PersonResponse(BaseModel):
     notes: Optional[str] = None
     photo_url: Optional[str] = None
     is_self: bool = False
+    connections_count: int = 0
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
