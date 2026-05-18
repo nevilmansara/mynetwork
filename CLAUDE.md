@@ -404,9 +404,9 @@ VITE_API_BASE_URL=http://localhost:8080
 
 > **UPDATE THIS SECTION** when starting each new phase.
 
-**Current Phase:** Phase 5 — Connections CRUD (Complete)  
-**Last Completed:** ConnectionCreate/Response/ConnectedPersonResponse/GraphData models, connection_service (get_all, get_person_connections, create_connection bidirectional KNOWS, delete_connection, get_graph_data), /connections router + /graph router, GET /people/{id}/connections, NetworkContext addConnection/deleteConnection/loadConnections/loadNetwork, useConnections hook, ConnectionForm (person dropdown, relationship pill-buttons, since/notes, REL_COLORS export), ConnectionList (avatar, badge, inline delete confirm), PersonProfile connections section with + Add button and live refresh  
-**Next Task:** Phase 6 — Graph Visualization (react-force-graph, node/edge colors, click to open profile, hover highlight)
+**Current Phase:** Phase 6 — Graph Visualization (Complete)  
+**Last Completed:** connectionService.getGraph(), NetworkContext loadGraphData + graph refresh on addConnection/deleteConnection, graphHelpers (getNodeColor/getLinkColor/getNodeRadius with rgba), GraphControls (zoom in/out/fit/labels toggle), NetworkGraph (ForceGraph2D, custom canvas node rendering, hover highlight with neighbor dimming, self-node ring, responsive resize), GraphPage (graph + side panel on node click, legend, node/connection count badge)  
+**Next Task:** Phase 7 — Search & Pathfinding (search by skill/occupation, shortest path visualization)
 
 ---
 

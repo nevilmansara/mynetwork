@@ -29,7 +29,16 @@ export function NetworkProvider({ children }) {
       const res = await connectionService.getAll()
       setConnections(res.data)
     } catch {
-      // non-fatal — connections just won't show in graph
+      // non-fatal
+    }
+  }, [])
+
+  const loadGraphData = useCallback(async () => {
+    try {
+      const res = await connectionService.getGraph()
+      setGraphData(res.data)
+    } catch {
+      // non-fatal — graph just won't render
     }
   }, [])
 
@@ -71,18 +80,24 @@ export function NetworkProvider({ children }) {
   const addConnection = useCallback(async (data) => {
     const res = await connectionService.create(data)
     setConnections((prev) => [...prev, res.data])
-    // Refresh people to update connections_count on cards
-    const peopleRes = await peopleService.getAll()
+    const [peopleRes, graphRes] = await Promise.all([
+      peopleService.getAll(),
+      connectionService.getGraph(),
+    ])
     setPeople(peopleRes.data)
+    setGraphData(graphRes.data)
     return res.data
   }, [])
 
   const deleteConnection = useCallback(async (id) => {
     await connectionService.delete(id)
     setConnections((prev) => prev.filter((c) => c.id !== id))
-    // Refresh people to update connections_count on cards
-    const peopleRes = await peopleService.getAll()
+    const [peopleRes, graphRes] = await Promise.all([
+      peopleService.getAll(),
+      connectionService.getGraph(),
+    ])
     setPeople(peopleRes.data)
+    setGraphData(graphRes.data)
   }, [])
 
   return (
@@ -95,6 +110,7 @@ export function NetworkProvider({ children }) {
         error,
         loadPeople,
         loadConnections,
+        loadGraphData,
         loadNetwork,
         addPerson,
         updatePerson,
