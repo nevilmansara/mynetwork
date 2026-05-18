@@ -404,9 +404,9 @@ VITE_API_BASE_URL=http://localhost:8080
 
 > **UPDATE THIS SECTION** when starting each new phase.
 
-**Current Phase:** Phase 4 — People CRUD (Complete)  
-**Last Completed:** PersonCreate/Update/Response models, people_service (get_all, get_by_id, create, update, delete with ownership scoping), /people router, peopleService.js, usePeople hook, NetworkContext with loading/error state, PersonForm (modal + tag-input skills), PersonCard (avatar, skill badges, hover edit/delete), PeoplePage (grid, search filter, skeleton, empty state), PersonProfile (full detail + edit), PersonDetailPage (fetch by ID, back nav)  
-**Next Task:** Phase 5 — Connections CRUD (link people, list/delete connections)
+**Current Phase:** Phase 5 — Connections CRUD (Complete)  
+**Last Completed:** ConnectionCreate/Response/ConnectedPersonResponse/GraphData models, connection_service (get_all, get_person_connections, create_connection bidirectional KNOWS, delete_connection, get_graph_data), /connections router + /graph router, GET /people/{id}/connections, NetworkContext addConnection/deleteConnection/loadConnections/loadNetwork, useConnections hook, ConnectionForm (person dropdown, relationship pill-buttons, since/notes, REL_COLORS export), ConnectionList (avatar, badge, inline delete confirm), PersonProfile connections section with + Add button and live refresh  
+**Next Task:** Phase 6 — Graph Visualization (react-force-graph, node/edge colors, click to open profile, hover highlight)
 
 ---
 

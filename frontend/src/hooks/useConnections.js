@@ -1,6 +1,7 @@
 import { useNetworkContext } from '../context/NetworkContext'
 
 export function useConnections() {
-  const { connections, addConnection, deleteConnection } = useNetworkContext()
-  return { connections, addConnection, deleteConnection }
+  const { connections, loading, error, loadConnections, addConnection, deleteConnection } =
+    useNetworkContext()
+  return { connections, loading, error, loadConnections, addConnection, deleteConnection }
 }

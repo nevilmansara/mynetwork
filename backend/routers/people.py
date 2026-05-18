@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from middleware.auth_middleware import get_current_user
 from models.person import PersonCreate, PersonUpdate, PersonResponse
+from models.connection import ConnectedPersonResponse
 from services.people_service import (
     get_all_people,
     get_person_by_id,
@@ -9,6 +10,7 @@ from services.people_service import (
     update_person,
     delete_person,
 )
+from services.connection_service import get_person_connections
 
 router = APIRouter()
 
@@ -36,3 +38,8 @@ async def edit_person(person_id: str, data: PersonUpdate, current_user: dict = D
 @router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_person(person_id: str, current_user: dict = Depends(get_current_user)):
     await delete_person(person_id, current_user["user_id"])
+
+
+@router.get("/{person_id}/connections", response_model=list[ConnectedPersonResponse])
+async def get_connections(person_id: str, current_user: dict = Depends(get_current_user)):
+    return await get_person_connections(person_id, current_user["user_id"])

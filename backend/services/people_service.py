@@ -35,7 +35,7 @@ async def get_all_people(user_id: str) -> list[PersonResponse]:
         result = await session.run(
             """
             MATCH (u:User {id: $user_id})-[:OWNS]->(p:Person)
-            OPTIONAL MATCH (p)-[:KNOWS]-(other:Person)
+            OPTIONAL MATCH (p)-[:KNOWS]->(other:Person)
             RETURN p, count(other) AS connections_count
             ORDER BY p.name
             """,
@@ -50,7 +50,7 @@ async def get_person_by_id(person_id: str, user_id: str) -> PersonResponse:
         result = await session.run(
             """
             MATCH (u:User {id: $user_id})-[:OWNS]->(p:Person {id: $person_id})
-            OPTIONAL MATCH (p)-[:KNOWS]-(other:Person)
+            OPTIONAL MATCH (p)-[:KNOWS]->(other:Person)
             RETURN p, count(other) AS connections_count
             """,
             user_id=user_id,
@@ -129,7 +129,7 @@ async def update_person(person_id: str, data: PersonUpdate, user_id: str) -> Per
             MATCH (u:User {{id: $user_id}})-[:OWNS]->(p:Person {{id: $person_id}})
             SET {set_clause}
             WITH p
-            OPTIONAL MATCH (p)-[:KNOWS]-(other:Person)
+            OPTIONAL MATCH (p)-[:KNOWS]->(other:Person)
             RETURN p, count(other) AS connections_count
             """,
             user_id=user_id,

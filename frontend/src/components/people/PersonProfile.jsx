@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePeople } from '../../hooks/usePeople'
 import PersonForm from './PersonForm'
+import ConnectionForm from '../connections/ConnectionForm'
+import ConnectionList from '../connections/ConnectionList'
+import { useNetworkContext } from '../../context/NetworkContext'
+import { peopleService } from '../../services/peopleService'
 
 const SKILL_COLORS = [
   'bg-violet-100 text-violet-700',
@@ -51,7 +55,23 @@ function InfoRow({ icon, label, value }) {
 
 export default function PersonProfile({ person, onUpdate }) {
   const { editPerson } = usePeople()
+  const { people } = useNetworkContext()
   const [showEdit, setShowEdit] = useState(false)
+  const [showAddConn, setShowAddConn] = useState(false)
+  const [personConnections, setPersonConnections] = useState([])
+
+  const loadPersonConnections = async () => {
+    try {
+      const res = await peopleService.getConnections(person.id)
+      setPersonConnections(res.data)
+    } catch {
+      setPersonConnections([])
+    }
+  }
+
+  useEffect(() => {
+    loadPersonConnections()
+  }, [person.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEdit = async (data) => {
     const updated = await editPerson(person.id, data)
@@ -122,12 +142,22 @@ export default function PersonProfile({ person, onUpdate }) {
           </div>
 
           <div className="mt-5 border-t border-gray-100 pt-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-              Connections
-            </p>
-            <p className="text-sm text-gray-400 italic">
-              Connection details coming in Phase 5.
-            </p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                Connections ({personConnections.length})
+              </p>
+              <button
+                onClick={() => setShowAddConn(true)}
+                className="text-xs text-blue-600 hover:underline font-medium"
+              >
+                + Add
+              </button>
+            </div>
+            <ConnectionList
+              connections={personConnections}
+              onAddConnection={() => setShowAddConn(true)}
+              onDeleted={loadPersonConnections}
+            />
           </div>
         </div>
       </div>
@@ -137,6 +167,16 @@ export default function PersonProfile({ person, onUpdate }) {
           initialData={person}
           onSubmit={handleEdit}
           onClose={() => setShowEdit(false)}
+        />
+      )}
+
+      {showAddConn && (
+        <ConnectionForm
+          person={person}
+          people={people}
+          existingConnections={personConnections}
+          onClose={() => setShowAddConn(false)}
+          onSuccess={loadPersonConnections}
         />
       )}
     </>

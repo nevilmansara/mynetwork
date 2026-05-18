@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import init_driver, close_driver, create_indexes, get_db
 from routers import auth, people, connections, search
+from routers.connections import graph_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(people.router, prefix="/people", tags=["people"])
 app.include_router(connections.router, prefix="/connections", tags=["connections"])
+app.include_router(graph_router, prefix="/graph", tags=["graph"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 
 

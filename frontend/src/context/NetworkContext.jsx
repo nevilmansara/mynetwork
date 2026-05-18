@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import { peopleService } from '../services/peopleService'
+import { connectionService } from '../services/connectionService'
 
 const NetworkContext = createContext(null)
 
@@ -23,10 +24,31 @@ export function NetworkProvider({ children }) {
     }
   }, [])
 
+  const loadConnections = useCallback(async () => {
+    try {
+      const res = await connectionService.getAll()
+      setConnections(res.data)
+    } catch {
+      // non-fatal — connections just won't show in graph
+    }
+  }, [])
+
   const loadNetwork = useCallback(async () => {
-    await loadPeople()
-    // connections + graphData loaded in Phase 5
-  }, [loadPeople])
+    setLoading(true)
+    setError(null)
+    try {
+      const [peopleRes, connRes] = await Promise.all([
+        peopleService.getAll(),
+        connectionService.getAll(),
+      ])
+      setPeople(peopleRes.data)
+      setConnections(connRes.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load network')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const addPerson = useCallback(async (data) => {
     const res = await peopleService.create(data)
@@ -43,14 +65,24 @@ export function NetworkProvider({ children }) {
   const deletePerson = useCallback(async (id) => {
     await peopleService.delete(id)
     setPeople((prev) => prev.filter((p) => p.id !== id))
+    setConnections((prev) => prev.filter((c) => c.person1_id !== id && c.person2_id !== id))
   }, [])
 
-  const addConnection = useCallback(async (_data) => {
-    // implemented in Phase 5
+  const addConnection = useCallback(async (data) => {
+    const res = await connectionService.create(data)
+    setConnections((prev) => [...prev, res.data])
+    // Refresh people to update connections_count on cards
+    const peopleRes = await peopleService.getAll()
+    setPeople(peopleRes.data)
+    return res.data
   }, [])
 
-  const deleteConnection = useCallback(async (_id) => {
-    // implemented in Phase 5
+  const deleteConnection = useCallback(async (id) => {
+    await connectionService.delete(id)
+    setConnections((prev) => prev.filter((c) => c.id !== id))
+    // Refresh people to update connections_count on cards
+    const peopleRes = await peopleService.getAll()
+    setPeople(peopleRes.data)
   }, [])
 
   return (
@@ -62,6 +94,7 @@ export function NetworkProvider({ children }) {
         loading,
         error,
         loadPeople,
+        loadConnections,
         loadNetwork,
         addPerson,
         updatePerson,
