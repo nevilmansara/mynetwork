@@ -1,246 +1,448 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthContext } from '../context/AuthContext'
+import { useNetworkContext } from '../context/NetworkContext'
 import { dashboardService } from '../services/dashboardService'
+import { peopleService } from '../services/peopleService'
+import NetworkGraph from '../components/graph/NetworkGraph'
+import { CATEGORIES, getCategory } from '../utils/graphHelpers'
 
-const SKILL_COLORS = [
-  'bg-violet-100 text-violet-700', 'bg-sky-100 text-sky-700',
-  'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700', 'bg-indigo-100 text-indigo-700',
-]
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-function skillColor(s) {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h)
-  return SKILL_COLORS[Math.abs(h) % SKILL_COLORS.length]
+const REL_COLORS = {
+  colleague: '#60A5FA', friend: '#4ADE80', family: '#C084FC', mentor: '#FBBF24', other: '#94A3B8',
 }
 
-function Avatar({ name }) {
-  const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
-  const hue = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+function getInitials(name = '') {
+  return name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+function getInitialsBg(name = '') {
+  const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+  return `hsl(${hue}, 50%, 38%)`
+}
+
+// ── Compact node detail panel ─────────────────────────────────────────────────
+function NodeDetailPanel({ person, onClose }) {
+  const navigate = useNavigate()
+  const [connections, setConnections] = useState([])
+
+  useEffect(() => {
+    if (!person) return
+    peopleService.getConnections(person.id)
+      .then(r => setConnections(r.data))
+      .catch(() => setConnections([]))
+  }, [person?.id])
+
+  if (!person) return null
+
+  const cat = getCategory(person.occupation)
+  const catInfo = CATEGORIES[cat]
+  const photoUrl = person.photo_url
+    ? (person.photo_url.startsWith('http') ? person.photo_url : `${API_BASE}${person.photo_url}`)
+    : null
+
   return (
-    <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 select-none text-xs"
-      style={{ background: `hsl(${hue}, 55%, 50%)` }}
-    >
-      {initials}
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 12, overflow: 'hidden', flexShrink: 0,
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        padding: '16px 16px 14px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {photoUrl ? (
+            <img src={photoUrl} alt={person.name}
+              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+              background: getInitialsBg(person.name),
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 700, fontSize: 17,
+            }}>
+              {getInitials(person.name)}
+            </div>
+          )}
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', lineHeight: 1.2 }}>
+              {person.name}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+              <span className="cat-pill small" style={{ color: catInfo.color, borderColor: catInfo.color + '55' }}>
+                {catInfo.label}
+              </span>
+              {person.occupation && (
+                <span style={{ fontSize: 12, color: 'var(--text-mut)' }}>{person.occupation}</span>
+              )}
+            </div>
+            {person.company && (
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 3 }}>@ {person.company}</div>
+            )}
+          </div>
+        </div>
+        <button className="icon-btn" onClick={onClose} style={{ marginLeft: 4, flexShrink: 0 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--border)' }}/>
+
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Skills */}
+        {person.skills?.length > 0 && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 7 }}>
+              Skills
+            </div>
+            <div className="chip-row tight">
+              {person.skills.map(s => <span key={s} className="chip">{s}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* Contact */}
+        {(person.email || person.phone || person.location) && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 7 }}>
+              Contact
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {person.email && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--text-mid)' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, color: 'var(--text-dim)' }}>
+                    <rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/>
+                  </svg>
+                  {person.email}
+                </div>
+              )}
+              {person.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--text-mid)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>#</span>
+                  {person.phone}
+                </div>
+              )}
+              {person.location && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'var(--text-mid)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>⌖</span>
+                  {person.location}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        {person.notes && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 7 }}>
+              Notes
+            </div>
+            <div style={{
+              fontSize: 12.5, color: 'var(--text-mid)', lineHeight: 1.55,
+              background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px',
+              border: '1px solid var(--border)',
+            }}>
+              {person.notes}
+            </div>
+          </div>
+        )}
+
+        {/* Connections */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 7 }}>
+            Connections ({connections.length})
+          </div>
+          {connections.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {connections.map(c => (
+                <span key={c.connection_id} style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '3px 9px', borderRadius: 999, fontSize: 12,
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  color: 'var(--text-mid)',
+                }}>
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                    background: REL_COLORS[c.relationship_type] || REL_COLORS.other,
+                  }}/>
+                  {c.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>No connections</div>
+          )}
+        </div>
+
+        {/* Edit details button */}
+        <button
+          className="btn-ghost"
+          style={{ width: '100%', justifyContent: 'center', marginTop: 2 }}
+          onClick={() => navigate(`/people/${person.id}/edit`)}
+        >
+          Edit details
+        </button>
+      </div>
     </div>
   )
 }
 
-function StatCard({ label, value, desc, colorClass, onClick }) {
-  const Tag = onClick ? 'button' : 'div'
-  return (
-    <Tag
-      onClick={onClick}
-      className={`bg-white rounded-2xl border border-gray-200 p-5 text-left w-full ${
-        onClick ? 'hover:border-gray-300 hover:shadow-sm transition cursor-pointer' : ''
-      }`}
-    >
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 truncate ${colorClass}`}>{value}</p>
-      <p className="text-xs text-gray-400 mt-1">{desc}</p>
-    </Tag>
-  )
-}
-
-const QUICK_ACTIONS = [
-  {
-    label: 'Add person',
-    desc: 'Add someone to your network',
-    path: '/people',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Search network',
-    desc: 'Find by skill or name',
-    path: '/search',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'View graph',
-    desc: 'Visualize your full network',
-    path: '/graph',
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <circle cx="6" cy="12" r="2" /><circle cx="18" cy="6" r="2" /><circle cx="18" cy="18" r="2" />
-        <path strokeLinecap="round" d="M8 12h8M7 10.5l9-3M7 13.5l9 3" />
-      </svg>
-    ),
-  },
-]
-
+// ── Main dashboard ────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuthContext()
+  const { graphData, people, loadGraphData, loadPeople } = useNetworkContext()
   const navigate = useNavigate()
+  const fgRef = useRef()
+
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedPersonId, setSelectedPersonId] = useState(null)
+  const [showLabels, setShowLabels] = useState(true)
+
+  const selectedPerson = people.find(p => p.id === selectedPersonId) || null
 
   useEffect(() => {
-    dashboardService.getStats()
-      .then((res) => setStats(res.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    Promise.all([
+      loadGraphData(),
+      loadPeople(),
+      dashboardService.getStats().then(r => setStats(r.data)).catch(() => {}),
+    ]).finally(() => setLoading(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const firstName = user?.name?.split(' ')[0] ?? 'there'
 
+  const catCounts = {}
+  people.forEach(p => {
+    if (p.is_self) return
+    const cat = getCategory(p.occupation)
+    catCounts[cat] = (catCounts[cat] || 0) + 1
+  })
+  const maxCat = Math.max(1, ...Object.values(catCounts))
+
+  const handleZoomIn  = () => fgRef.current?.zoom(fgRef.current.zoom() * 1.35, 300)
+  const handleZoomOut = () => fgRef.current?.zoom(fgRef.current.zoom() * 0.75, 300)
+  const handleReset   = () => fgRef.current?.zoomToFit(400, 40)
+
+  const handleNodeClick = (node) => {
+    setSelectedPersonId(prev => prev === node.id ? null : node.id)
+  }
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{greeting}, {firstName}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Here's what's happening in your network</p>
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard
-          label="People"
-          value={loading ? '—' : (stats?.total_people ?? 0)}
-          desc="Contacts in your network"
-          colorClass="text-blue-600"
-          onClick={() => navigate('/people')}
-        />
-        <StatCard
-          label="Connections"
-          value={loading ? '—' : (stats?.total_connections ?? 0)}
-          desc="Relationships mapped"
-          colorClass="text-emerald-600"
-          onClick={() => navigate('/graph')}
-        />
-        <StatCard
-          label="Most connected"
-          value={loading ? '—' : (stats?.most_connected?.name ?? 'None yet')}
-          desc={
-            stats?.most_connected
-              ? `${stats.most_connected.connections_count} connection${stats.most_connected.connections_count !== 1 ? 's' : ''}`
-              : 'Connect people to see this'
-          }
-          colorClass="text-amber-600"
-        />
-      </div>
-
-      {/* Quick actions */}
-      <div className="mb-8">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Quick actions</p>
-        <div className="grid grid-cols-3 gap-3">
-          {QUICK_ACTIONS.map(({ label, desc, path, icon }) => (
-            <button
-              key={label}
-              onClick={() => navigate(path)}
-              className="flex flex-col items-start gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-4 text-left hover:border-blue-200 hover:bg-blue-50 transition group"
-            >
-              <span className="text-gray-500 group-hover:text-blue-600 transition">{icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-              </div>
-            </button>
-          ))}
+    <>
+      <div className="page-head">
+        <div>
+          <div className="page-eyebrow">Dashboard</div>
+          <h1 className="page-title">{greeting}, {firstName}</h1>
+          <p className="page-sub">Here's what's happening in your network</p>
+        </div>
+        <div className="page-actions">
+          <button className="btn-ghost" onClick={() => navigate('/search')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+          </button>
+          <button className="btn-primary" onClick={() => navigate('/people/new')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add person
+          </button>
         </div>
       </div>
 
-      {/* Bottom row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Recently added */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Recently added</p>
-            {stats?.recent_people?.length > 0 && (
-              <button
-                onClick={() => navigate('/people')}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                View all
-              </button>
-            )}
-          </div>
-          {loading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-[52px] bg-gray-100 rounded-xl animate-pulse" />
-              ))}
+      <div className="dash-grid">
+        {/* Left — graph */}
+        <div className="card graph-card">
+          <div className="card-head">
+            <div>
+              <div className="card-title">Network graph</div>
+              <div className="card-sub">
+                {loading ? '…' : `${graphData.nodes.length} people · ${graphData.links.length} connections`}
+              </div>
             </div>
-          ) : stats?.recent_people?.length > 0 ? (
-            <div className="space-y-2">
-              {stats.recent_people.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => navigate('/people')}
-                  className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl px-3 py-2.5 hover:border-gray-200 cursor-pointer transition"
-                >
-                  <Avatar name={p.name} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
-                    {(p.occupation || p.company) && (
-                      <p className="text-xs text-gray-400 truncate">
-                        {[p.occupation, p.company].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
-                  </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                className="btn-ghost small"
+                onClick={() => setShowLabels(v => !v)}
+                style={showLabels ? { borderColor: 'var(--accent)', color: 'var(--accent-2)' } : {}}
+              >
+                Labels {showLabels ? 'on' : 'off'}
+              </button>
+              <button className="btn-ghost small" onClick={() => navigate('/graph')}>
+                Full view →
+              </button>
+            </div>
+          </div>
+          <div className="graph-wrap" style={{ minHeight: 480, flex: 1 }}>
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <div className="spinner"/>
+              </div>
+            ) : (
+              <NetworkGraph
+                graphData={graphData}
+                onNodeClick={handleNodeClick}
+                showLabels={showLabels}
+                fgRef={fgRef}
+                pathNodeIds={null}
+              />
+            )}
+            <div className="graph-controls">
+              <button onClick={handleZoomIn} title="Zoom in">+</button>
+              <button onClick={handleZoomOut} title="Zoom out">−</button>
+              <button onClick={handleReset} title="Fit">⊞</button>
+            </div>
+            <div className="graph-legend">
+              {Object.entries(REL_COLORS).map(([type, color]) => (
+                <div key={type} className="legend-item">
+                  <span className="legend-dot" style={{ background: color }}/>
+                  <span style={{ textTransform: 'capitalize' }}>{type}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center">
-              <p className="text-sm text-gray-400">No people added yet.</p>
-              <button
-                onClick={() => navigate('/people')}
-                className="mt-1.5 text-xs text-blue-600 hover:underline"
-              >
-                Add your first contact
-              </button>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Top skills */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Top skills in network
-          </p>
-          {loading ? (
-            <div className="flex flex-wrap gap-2">
-              {[80, 64, 96, 72, 56, 88].map((w) => (
-                <div
-                  key={w}
-                  className="h-6 bg-gray-100 rounded-full animate-pulse"
-                  style={{ width: `${w}px` }}
-                />
-              ))}
+        {/* Right — stats sidebar */}
+        <div className="side-stats">
+          {/* Node detail panel — shown when a node is clicked */}
+          {selectedPerson && (
+            <NodeDetailPanel
+              person={selectedPerson}
+              onClose={() => setSelectedPersonId(null)}
+            />
+          )}
+
+          {/* Stats card */}
+          <div className="card stat-card">
+            <div className="card-head">
+              <div className="card-title">Network stats</div>
             </div>
-          ) : stats?.top_skills?.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {stats.top_skills.map(({ skill, count }) => (
-                <button
-                  key={skill}
-                  onClick={() => navigate(`/search?q=${encodeURIComponent(skill)}`)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${skillColor(skill)} hover:opacity-80 transition`}
-                  title={`${count} person${count !== 1 ? 's' : ''} with this skill`}
-                >
-                  {skill}
-                </button>
-              ))}
+            <div className="stat-row">
+              <span className="stat-label">Total contacts</span>
+              <span className="stat-val">{loading ? '—' : (stats?.total_people ?? 0)}</span>
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center">
-              <p className="text-sm text-gray-400">No skills recorded yet.</p>
-              <p className="text-xs text-gray-400 mt-1">Add skills when creating contacts</p>
+            <div className="stat-row">
+              <span className="stat-label">Connections</span>
+              <span className="stat-val">{loading ? '—' : (stats?.total_connections ?? 0)}</span>
+            </div>
+            <div className="stat-row">
+              <span className="stat-label">Most connected</span>
+              <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 14, fontWeight: 600 }}>
+                {loading ? '—' : (stats?.most_connected?.name ?? 'None')}
+              </span>
+            </div>
+          </div>
+
+          {/* Category breakdown */}
+          <div className="card cat-card">
+            <div className="card-head" style={{ borderBottom: 0, padding: '16px 18px 8px' }}>
+              <div className="card-title">By category</div>
+            </div>
+            <div className="cat-list">
+              {Object.entries(CATEGORIES).map(([key, cat]) => {
+                const count = catCounts[key] || 0
+                return (
+                  <div key={key}>
+                    <div className="cat-row-head">
+                      <div className="cat-row-label">
+                        <span className="legend-dot" style={{ background: cat.color }}/>
+                        {cat.label}
+                      </div>
+                      <span className="cat-row-count">{count}</span>
+                    </div>
+                    <div className="cat-bar">
+                      <div
+                        className="cat-bar-fill"
+                        style={{ width: `${(count / maxCat) * 100}%`, background: cat.color }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Recently added */}
+          <div className="card recent-card">
+            <div className="card-head" style={{ borderBottom: 0, padding: '16px 18px 4px' }}>
+              <div className="card-title">Recently added</div>
+              <button className="link-btn" onClick={() => navigate('/people')}>View all</button>
+            </div>
+            <div className="recent-list">
+              {loading ? (
+                [1,2,3].map(i => (
+                  <div key={i} style={{
+                    height: 44, margin: '2px 2px', borderRadius: 8,
+                    background: 'var(--surface-2)', animation: 'pulse 1.5s infinite',
+                  }}/>
+                ))
+              ) : stats?.recent_people?.length > 0 ? (
+                stats.recent_people.map(p => (
+                  <button
+                    key={p.id}
+                    className={`recent-row${selectedPersonId === p.id ? ' active' : ''}`}
+                    onClick={() => setSelectedPersonId(prev => prev === p.id ? null : p.id)}
+                  >
+                    <div
+                      className="initials"
+                      style={{ background: getInitialsBg(p.name), color: '#fff' }}
+                    >
+                      {getInitials(p.name)}
+                    </div>
+                    <div className="recent-meta">
+                      <div className="recent-name">{p.name}</div>
+                      <div className="recent-sub">
+                        {[p.occupation, p.company].filter(Boolean).join(' · ') || 'No details'}
+                      </div>
+                    </div>
+                    <svg className="recent-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                  </button>
+                ))
+              ) : (
+                <div className="empty-state small">
+                  <div className="empty-sub">No contacts yet</div>
+                  <button
+                    className="link-btn"
+                    style={{ marginTop: 6 }}
+                    onClick={() => navigate('/people/new')}
+                  >
+                    Add your first contact
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Top skills */}
+          {stats?.top_skills?.length > 0 && (
+            <div className="card" style={{ padding: '14px 18px 18px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Top skills</div>
+              <div className="chip-row">
+                {stats.top_skills.map(({ skill }) => (
+                  <button
+                    key={skill}
+                    className="pop"
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(skill)}`)}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

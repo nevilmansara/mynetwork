@@ -206,6 +206,7 @@ async def get_graph_data(user_id: str) -> GraphData:
             skills=list(r["p"].get("skills") or []),
             val=max(1, r["conn_count"]),
             is_self=r["p"].get("is_self", False),
+            photo_url=r["p"].get("photo_url"),
         )
         for r in people_records
     ]

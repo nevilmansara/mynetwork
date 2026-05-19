@@ -2,22 +2,16 @@ import { useState, useEffect } from 'react'
 import { useConnections } from '../../hooks/useConnections'
 
 const RELATIONSHIP_TYPES = [
-  { value: 'colleague', label: 'Colleague' },
-  { value: 'friend',    label: 'Friend' },
-  { value: 'family',    label: 'Family' },
-  { value: 'mentor',    label: 'Mentor' },
-  { value: 'other',     label: 'Other' },
+  { value: 'colleague', label: 'Colleague', color: '#60A5FA' },
+  { value: 'friend',    label: 'Friend',    color: '#4ADE80' },
+  { value: 'family',    label: 'Family',    color: '#C084FC' },
+  { value: 'mentor',    label: 'Mentor',    color: '#FBBF24' },
+  { value: 'other',     label: 'Other',     color: '#94A3B8' },
 ]
 
-const REL_COLORS = {
-  colleague: 'bg-blue-100 text-blue-700',
-  friend:    'bg-emerald-100 text-emerald-700',
-  family:    'bg-violet-100 text-violet-700',
-  mentor:    'bg-amber-100 text-amber-700',
-  other:     'bg-gray-100 text-gray-600',
+export const REL_COLORS = {
+  colleague: '#60A5FA', friend: '#4ADE80', family: '#C084FC', mentor: '#FBBF24', other: '#94A3B8',
 }
-
-export { REL_COLORS }
 
 export default function ConnectionForm({ person, people, existingConnections = [], onClose, onSuccess }) {
   const { addConnection } = useConnections()
@@ -28,11 +22,8 @@ export default function ConnectionForm({ person, people, existingConnections = [
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // People the current person is NOT already connected to (and not themselves)
-  const connectedIds = new Set(existingConnections.map((c) => c.id))
-  const available = people.filter(
-    (p) => p.id !== person.id && !connectedIds.has(p.id)
-  )
+  const connectedIds = new Set(existingConnections.map(c => c.id))
+  const available = people.filter(p => p.id !== person.id && !connectedIds.has(p.id))
 
   useEffect(() => {
     if (available.length > 0) setPersonId2(available[0].id)
@@ -61,96 +52,105 @@ export default function ConnectionForm({ person, people, existingConnections = [
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+        <div className="modal-head">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Add Connection</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Connecting from <span className="font-medium text-gray-600">{person.name}</span></p>
+            <div className="modal-title">Add connection</div>
+            <div style={{ fontSize: 12, color: 'var(--text-mut)', marginTop: 2 }}>
+              From <span style={{ color: 'var(--text-mid)', fontWeight: 500 }}>{person.name}</span>
+            </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button className="icon-btn" onClick={onClose}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
         {available.length === 0 ? (
-          <div className="px-6 py-8 text-center">
-            <p className="text-sm text-gray-500">All people in your network are already connected to {person.name}.</p>
-            <button onClick={onClose} className="mt-4 text-sm text-blue-600 hover:underline">Close</button>
+          <div className="modal-body" style={{ textAlign: 'center', padding: '32px 24px' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-mut)', marginBottom: 16 }}>
+              All people in your network are already connected to {person.name}.
+            </div>
+            <button className="btn-ghost" onClick={onClose}>Close</button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-            )}
+          <>
+            <div className="modal-body">
+              <form id="conn-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {error && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 8, fontSize: 13,
+                    background: 'oklch(0.70 0.18 25 / 0.12)',
+                    border: '1px solid oklch(0.70 0.18 25 / 0.35)',
+                    color: 'var(--bad)',
+                  }}>
+                    {error}
+                  </div>
+                )}
 
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Connect with</label>
-              <select
-                value={personId2}
-                onChange={(e) => setPersonId2(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                {available.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}{p.occupation ? ` — ${p.occupation}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Relationship type</label>
-              <div className="flex flex-wrap gap-2">
-                {RELATIONSHIP_TYPES.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRelType(value)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                      relType === value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
+                <label className="field" style={{ margin: 0 }}>
+                  <span>Connect with</span>
+                  <select
+                    className="select-field"
+                    value={personId2}
+                    onChange={e => setPersonId2(e.target.value)}
+                    style={{ background: 'var(--bg-2)' }}
                   >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {available.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}{p.occupation ? ` — ${p.occupation}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Since (optional)</label>
-                <input
-                  value={since}
-                  onChange={(e) => setSince(e.target.value)}
-                  placeholder="e.g. 2020"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
-                <input
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="How they met…"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text-mid)', marginBottom: 8 }}>
+                    Relationship type
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {RELATIONSHIP_TYPES.map(({ value, label, color }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setRelType(value)}
+                        style={relType === value ? {
+                          padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                          border: `1px solid ${color}55`,
+                          background: `${color}22`, color,
+                        } : {
+                          padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                          border: '1px solid var(--border)', background: 'transparent',
+                          color: 'var(--text-mid)',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition">
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
-              >
-                {submitting ? 'Connecting…' : 'Add Connection'}
+                <div className="form-row" style={{ marginBottom: 0 }}>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span>Since (optional)</span>
+                    <input value={since} onChange={e => setSince(e.target.value)} placeholder="2020"/>
+                  </label>
+                  <label className="field" style={{ margin: 0 }}>
+                    <span>Notes (optional)</span>
+                    <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="How they met…"/>
+                  </label>
+                </div>
+              </form>
+            </div>
+            <div className="modal-foot">
+              <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
+              <button type="submit" form="conn-form" className="btn-primary" disabled={submitting}>
+                {submitting ? 'Connecting…' : 'Add connection'}
               </button>
             </div>
-          </form>
+          </>
         )}
       </div>
     </div>

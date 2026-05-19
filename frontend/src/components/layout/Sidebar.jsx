@@ -1,21 +1,28 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuthContext } from '../../context/AuthContext'
+import { CATEGORIES } from '../../utils/graphHelpers'
 
-const links = [
+const NAV_ITEMS = [
   {
     to: '/dashboard',
     label: 'Dashboard',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/>
+        <line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="7" x2="12" y2="17"/>
+        <line x1="18" y1="7" x2="12" y2="17"/>
       </svg>
     ),
   },
   {
     to: '/people',
-    label: 'People',
+    label: 'Contacts',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <circle cx="9" cy="9" r="3.5"/>
+        <path d="M2 20a7 7 0 0 1 14 0"/>
+        <circle cx="17" cy="8" r="2.5"/>
+        <path d="M16 14h1a5 5 0 0 1 5 5"/>
       </svg>
     ),
   },
@@ -23,8 +30,9 @@ const links = [
     to: '/graph',
     label: 'Graph',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/>
+        <line x1="7" y1="12" x2="17" y2="6"/><line x1="7" y1="12" x2="17" y2="18"/>
       </svg>
     ),
   },
@@ -32,47 +40,109 @@ const links = [
     to: '/search',
     label: 'Search',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
     ),
   },
 ]
 
+function getInitials(name = '') {
+  return name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase() || 'ME'
+}
+
+function getInitialsBg(name = '') {
+  const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+  return `hsl(${hue}, 50%, 40%)`
+}
+
 export default function Sidebar() {
+  const { user, logout } = useAuthContext()
+  const navigate = useNavigate()
+
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 flex flex-col">
-      {/* Brand */}
-      <div className="h-14 flex items-center px-5 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <span className="font-bold text-gray-900 text-sm">MyNetwork</span>
+    <nav className="sidebar">
+      <div className="side-brand">
+        <div className="brand-mark small">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <circle cx="6"  cy="7"  r="2.5" fill="oklch(0.72 0.17 305)"/>
+            <circle cx="18" cy="7"  r="2.5" fill="oklch(0.72 0.16 235)"/>
+            <circle cx="12" cy="17" r="2.5" fill="oklch(0.74 0.16 155)"/>
+            <line x1="6"  y1="7"  x2="18" y2="7"  stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
+            <line x1="6"  y1="7"  x2="12" y2="17" stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
+            <line x1="18" y1="7"  x2="12" y2="17" stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
+          </svg>
         </div>
+        <span className="brand-name">MyNetwork</span>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {links.map(({ to, label, icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`
-            }
-          >
-            {icon}
-            {label}
-          </NavLink>
+      <div className="side-section-label">Workspace</div>
+      <ul className="side-nav">
+        {NAV_ITEMS.map(({ to, label, icon }) => (
+          <li key={to}>
+            <NavLink to={to} className={({ isActive }) => isActive ? 'side-link active' : 'side-link'}>
+              {({ isActive }) => (
+                <>
+                  <span className="side-icon">{icon}</span>
+                  <span className="side-label">{label}</span>
+                  {isActive && <span className="side-marker"/>}
+                </>
+              )}
+            </NavLink>
+          </li>
         ))}
-      </nav>
-    </aside>
+      </ul>
+
+      <div className="side-spacer"/>
+
+      <div className="side-section-label">Account</div>
+      <ul className="side-nav">
+        <li>
+          <button className="side-link" onClick={() => navigate('/people/new')}>
+            <span className="side-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </span>
+            <span className="side-label">Add person</span>
+          </button>
+        </li>
+        {user?.my_person_id && (
+          <li>
+            <button className="side-link" onClick={() => navigate(`/people/${user.my_person_id}/edit`)}>
+              <span className="side-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <circle cx="12" cy="8" r="4"/>
+                  <path d="M4 20a8 8 0 0 1 16 0"/>
+                </svg>
+              </span>
+              <span className="side-label">Edit my profile</span>
+            </button>
+          </li>
+        )}
+      </ul>
+
+      {user && (
+        <div className="side-user">
+          <div
+            className="initials"
+            style={{ background: getInitialsBg(user.name), color: '#fff' }}
+          >
+            {getInitials(user.name)}
+          </div>
+          <div className="side-user-meta">
+            <div className="side-user-name">{user.name}</div>
+            <div className="side-user-mail">{user.email}</div>
+          </div>
+          <button className="icon-btn" onClick={logout} title="Sign out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      )}
+    </nav>
   )
 }

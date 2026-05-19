@@ -7,14 +7,18 @@ import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import PeoplePage from './pages/PeoplePage'
 import PersonDetailPage from './pages/PersonDetailPage'
+import PersonEditPage from './pages/PersonEditPage'
 import GraphPage from './pages/GraphPage'
 import SearchPage from './pages/SearchPage'
 import Layout from './components/layout/Layout'
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', background: 'var(--bg)',
+    }}>
+      <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }}/>
     </div>
   )
 }
@@ -50,6 +54,8 @@ export default function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="people" element={<PeoplePage />} />
+              <Route path="people/new" element={<PersonEditPage />} />
+              <Route path="people/:id/edit" element={<PersonEditPage />} />
               <Route path="people/:id" element={<PersonDetailPage />} />
               <Route path="graph" element={<GraphPage />} />
               <Route path="search" element={<SearchPage />} />

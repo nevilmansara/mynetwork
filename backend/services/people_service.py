@@ -141,6 +141,27 @@ async def update_person(person_id: str, data: PersonUpdate, user_id: str) -> Per
         return _record_to_person(dict(record))
 
 
+async def set_person_photo(person_id: str, photo_url: str, user_id: str) -> PersonResponse:
+    async with get_db() as session:
+        result = await session.run(
+            """
+            MATCH (u:User {id: $user_id})-[:OWNS]->(p:Person {id: $person_id})
+            SET p.photo_url = $photo_url, p.updated_at = $now
+            WITH p
+            OPTIONAL MATCH (p)-[:KNOWS]->(other:Person)
+            RETURN p, count(other) AS connections_count
+            """,
+            user_id=user_id,
+            person_id=person_id,
+            photo_url=photo_url,
+            now=datetime.now(timezone.utc).isoformat(),
+        )
+        record = await result.single()
+        if not record:
+            raise HTTPException(status_code=404, detail="Person not found")
+        return _record_to_person(dict(record))
+
+
 async def delete_person(person_id: str, user_id: str) -> None:
     async with get_db() as session:
         check = await session.run(

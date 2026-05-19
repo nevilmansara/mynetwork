@@ -5,26 +5,19 @@ import { useAuthContext } from '../context/AuthContext'
 export default function RegisterPage() {
   const { register } = useAuthContext()
   const navigate = useNavigate()
-
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
     setError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
+    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return }
+    if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
     setError('')
     try {
@@ -38,118 +31,118 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="login-shell">
+      <div className="login-bg-grid"/>
+      <div className="login-bg-orb"/>
+      <div className="login-bg-orb login-bg-orb-2"/>
 
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      <div className="login-card">
+        <div className="login-brand">
+          <div className="brand-mark">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <circle cx="6"  cy="7"  r="2.5" fill="oklch(0.72 0.17 305)"/>
+              <circle cx="18" cy="7"  r="2.5" fill="oklch(0.72 0.16 235)"/>
+              <circle cx="12" cy="17" r="2.5" fill="oklch(0.74 0.16 155)"/>
+              <line x1="6"  y1="7"  x2="18" y2="7"  stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
+              <line x1="6"  y1="7"  x2="12" y2="17" stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
+              <line x1="18" y1="7"  x2="12" y2="17" stroke="oklch(0.55 0.04 260)" strokeWidth="1"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">MyNetwork</h1>
-          <p className="text-gray-500 mt-1 text-sm">Start building your network</p>
+          <span className="brand-name">MyNetwork</span>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Create your account</h2>
+        <h1 className="login-title">Map your people.</h1>
+        <p className="login-sub">Build a graph of every contact you have, and how they connect.</p>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
+        {error && (
+          <div style={{
+            marginBottom: 16, padding: '10px 14px',
+            background: 'oklch(0.70 0.18 25 / 0.12)',
+            border: '1px solid oklch(0.70 0.18 25 / 0.35)',
+            borderRadius: 8, fontSize: 13, color: 'var(--bad)',
+          }}>
+            {error}
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Jane Smith"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="login-form">
+          <label className="field">
+            <span>Full name</span>
+            <input
+              name="name" type="text" autoComplete="name" required
+              value={form.name} onChange={handleChange}
+              placeholder="Alex Morgan"
+            />
+          </label>
+          <label className="field">
+            <span>Email</span>
+            <input
+              name="email" type="email" autoComplete="email" required
+              value={form.email} onChange={handleChange}
+              placeholder="you@example.com"
+            />
+          </label>
+          <label className="field">
+            <span>Password <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>(min 8 chars)</span></span>
+            <input
+              name="password" type="password" autoComplete="new-password" required
+              value={form.password} onChange={handleChange}
+              placeholder="••••••••"
+            />
+          </label>
+          <label className="field">
+            <span>Confirm password</span>
+            <input
+              name="confirmPassword" type="password" autoComplete="new-password" required
+              value={form.confirmPassword} onChange={handleChange}
+              placeholder="••••••••"
+            />
+          </label>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
+          <button type="submit" className="btn-primary login-cta" disabled={loading}>
+            {loading ? 'Creating account…' : 'Create account'}
+            {!loading && <span className="cta-arrow">→</span>}
+          </button>
+        </form>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-                <span className="ml-1 font-normal text-gray-400">(min 8 characters)</span>
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={form.confirmPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium text-sm rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
-          </p>
+        <div className="login-toggle" style={{ marginTop: 20 }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{ color: 'var(--accent-2)', fontWeight: 500 }}>
+            Sign in
+          </Link>
         </div>
       </div>
+
+      <aside style={{
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'radial-gradient(ellipse at 60% 40%, oklch(0.20 0.03 285 / 0.5), transparent 60%)',
+        overflow: 'hidden',
+      }}>
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <div style={{ fontSize: 48, marginBottom: 24 }}>
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="20"  cy="30"  r="10" fill="oklch(0.72 0.17 305)" opacity="0.9"/>
+              <circle cx="100" cy="30"  r="10" fill="oklch(0.72 0.16 235)" opacity="0.9"/>
+              <circle cx="60"  cy="100" r="10" fill="oklch(0.74 0.16 155)" opacity="0.9"/>
+              <circle cx="60"  cy="30"  r="6"  fill="oklch(0.76 0.16 55)"  opacity="0.8"/>
+              <circle cx="20"  cy="80"  r="6"  fill="oklch(0.74 0.15 25)"  opacity="0.8"/>
+              <circle cx="100" cy="80"  r="6"  fill="oklch(0.74 0.07 260)" opacity="0.8"/>
+              <line x1="20" y1="30" x2="100" y2="30" stroke="oklch(0.40 0.04 260)" strokeWidth="1.5"/>
+              <line x1="20" y1="30" x2="60"  y2="100" stroke="oklch(0.40 0.04 260)" strokeWidth="1.5"/>
+              <line x1="100" y1="30" x2="60" y2="100" stroke="oklch(0.40 0.04 260)" strokeWidth="1.5"/>
+              <line x1="20" y1="30" x2="60"  y2="30" stroke="oklch(0.40 0.04 260)" strokeWidth="1"/>
+              <line x1="100" y1="30" x2="100" y2="80" stroke="oklch(0.40 0.04 260)" strokeWidth="1"/>
+              <line x1="20" y1="80" x2="60"  y2="100" stroke="oklch(0.40 0.04 260)" strokeWidth="1"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', marginBottom: 8 }}>
+            Your network, visualized
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-mut)', maxWidth: 260, margin: '0 auto', lineHeight: 1.6 }}>
+            Map every contact and see the shortest path to anyone through your connections.
+          </div>
+        </div>
+      </aside>
     </div>
   )
 }

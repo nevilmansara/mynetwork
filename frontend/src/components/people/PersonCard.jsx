@@ -1,55 +1,52 @@
-import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import PersonForm from './PersonForm'
+import { useNavigate } from 'react-router-dom'
 import { usePeople } from '../../hooks/usePeople'
+import { CATEGORIES, getCategory } from '../../utils/graphHelpers'
 
-const SKILL_COLORS = [
-  'bg-violet-100 text-violet-700',
-  'bg-sky-100 text-sky-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-  'bg-indigo-100 text-indigo-700',
-  'bg-teal-100 text-teal-700',
-  'bg-orange-100 text-orange-700',
-]
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
-function skillColor(skill) {
-  let hash = 0
-  for (let i = 0; i < skill.length; i++) hash = skill.charCodeAt(i) + ((hash << 5) - hash)
-  return SKILL_COLORS[Math.abs(hash) % SKILL_COLORS.length]
+function getInitials(name = '') {
+  return name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+function getInitialsBg(name = '') {
+  const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+  return `hsl(${hue}, 50%, 38%)`
 }
 
-function Avatar({ name, photoUrl }) {
+function CardAvatar({ person }) {
+  const photoUrl = person.photo_url
+    ? (person.photo_url.startsWith('http') ? person.photo_url : `${API_BASE}${person.photo_url}`)
+    : null
   if (photoUrl) {
     return (
-      <img src={photoUrl} alt={name} className="w-14 h-14 rounded-full object-cover ring-2 ring-white" />
+      <img
+        src={photoUrl}
+        alt={person.name}
+        style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+      />
     )
   }
-  const initials = name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-  const hue = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360
   return (
     <div
-      className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold ring-2 ring-white select-none"
-      style={{ background: `hsl(${hue}, 55%, 50%)` }}
+      className="initials big"
+      style={{ background: getInitialsBg(person.name), color: '#fff', borderRadius: '50%' }}
     >
-      {initials}
+      {getInitials(person.name)}
     </div>
   )
 }
 
 export default function PersonCard({ person }) {
   const navigate = useNavigate()
-  const { editPerson, removePerson } = usePeople()
-  const [showEdit, setShowEdit] = useState(false)
+  const { removePerson } = usePeople()
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+
+  const cat = getCategory(person.occupation)
+  const catInfo = CATEGORIES[cat]
+  const visibleSkills = person.skills?.slice(0, 3) || []
+  const extraSkills = (person.skills?.length || 0) - visibleSkills.length
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -64,108 +61,101 @@ export default function PersonCard({ person }) {
     }
   }
 
-  const visibleSkills = person.skills?.slice(0, 3) || []
-  const extraSkills = (person.skills?.length || 0) - visibleSkills.length
-
   return (
     <>
       <div
-        className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group relative"
+        className="contact-card"
         onClick={() => navigate(`/people/${person.id}`)}
       >
-        {person.is_self && (
-          <span className="absolute top-3 right-3 text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full">
-            You
-          </span>
-        )}
-
-        <div className="flex items-start gap-4">
-          <Avatar name={person.name} photoUrl={person.photo_url} />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate">{person.name}</h3>
-            {person.occupation && (
-              <p className="text-sm text-gray-500 truncate">{person.occupation}</p>
-            )}
-            {person.company && (
-              <p className="text-xs text-gray-400 truncate">{person.company}</p>
+        <div className="contact-card-top">
+          <CardAvatar person={person}/>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <span
+              className="cat-pill"
+              style={{ color: catInfo.color, borderColor: catInfo.color + '55' }}
+            >
+              {catInfo.label}
+            </span>
+            {person.is_self && (
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 999,
+                background: 'var(--accent-glow)', color: 'var(--accent-2)',
+                border: '1px solid oklch(0.55 0.15 285 / 0.4)',
+              }}>
+                You
+              </span>
             )}
           </div>
         </div>
 
-        {visibleSkills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {visibleSkills.map((skill) => (
-              <span
-                key={skill}
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${skillColor(skill)}`}
-              >
-                {skill}
-              </span>
-            ))}
-            {extraSkills > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                +{extraSkills}
-              </span>
-            )}
-          </div>
-        )}
+        <div className="contact-card-body">
+          <div className="contact-card-name">{person.name}</div>
+          {person.occupation && (
+            <div className="contact-card-occ">{person.occupation}</div>
+          )}
+          {person.company && (
+            <div className="contact-card-co">{person.company}</div>
+          )}
+          {visibleSkills.length > 0 && (
+            <div className="chip-row tight">
+              {visibleSkills.map(skill => (
+                <span key={skill} className="chip">{skill}</span>
+              ))}
+              {extraSkills > 0 && (
+                <span className="chip muted">+{extraSkills}</span>
+              )}
+            </div>
+          )}
+        </div>
 
-        {person.connections_count > 0 && (
-          <p className="text-xs text-gray-400 mt-3">
-            {person.connections_count} connection{person.connections_count !== 1 ? 's' : ''}
-          </p>
-        )}
-
-        {deleteError && (
-          <p className="text-xs text-red-500 mt-2 px-1">{deleteError}</p>
-        )}
-
-        {!person.is_self && (
+        <div className="contact-card-foot">
+          <span className="foot-meta">
+            {person.connections_count > 0
+              ? `${person.connections_count} connection${person.connections_count !== 1 ? 's' : ''}`
+              : 'No connections'}
+          </span>
           <div
-            className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => e.stopPropagation()}
+            style={{ display: 'flex', gap: 4 }}
+            onClick={e => e.stopPropagation()}
           >
+            {deleteError && (
+              <span style={{ fontSize: 10, color: 'var(--bad)', marginRight: 4 }}>Error</span>
+            )}
             <button
-              onClick={() => setShowEdit(true)}
-              className="flex-1 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg py-1.5 transition"
+              className="btn-ghost small"
+              onClick={() => navigate(`/people/${person.id}/edit`)}
             >
               Edit
             </button>
-            {confirming ? (
-              <div className="flex gap-1 flex-1">
+            {!person.is_self && (
+              confirming ? (
+                <>
+                  <button
+                    className="btn-ghost small"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    style={{ color: 'var(--bad)', borderColor: 'oklch(0.70 0.18 25 / 0.4)' }}
+                  >
+                    {deleting ? '…' : 'Confirm'}
+                  </button>
+                  <button className="btn-ghost small" onClick={() => setConfirming(false)}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
                 <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex-1 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg py-1.5 transition disabled:opacity-60"
+                  className="btn-ghost small"
+                  onClick={() => setConfirming(true)}
+                  style={{ color: 'var(--text-mut)' }}
                 >
-                  {deleting ? '…' : 'Confirm'}
+                  Delete
                 </button>
-                <button
-                  onClick={() => setConfirming(false)}
-                  className="flex-1 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg py-1.5 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirming(true)}
-                className="flex-1 text-xs font-medium text-red-500 bg-red-50 hover:bg-red-100 rounded-lg py-1.5 transition"
-              >
-                Delete
-              </button>
+              )
             )}
           </div>
-        )}
+        </div>
       </div>
 
-      {showEdit && (
-        <PersonForm
-          initialData={person}
-          onSubmit={(data) => editPerson(person.id, data)}
-          onClose={() => setShowEdit(false)}
-        />
-      )}
     </>
   )
 }

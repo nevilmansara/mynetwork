@@ -43,6 +43,7 @@ class GraphNode(BaseModel):
     skills: list[str] = []
     val: int = 1
     is_self: bool = False
+    photo_url: Optional[str] = None
 
 
 class GraphLink(BaseModel):

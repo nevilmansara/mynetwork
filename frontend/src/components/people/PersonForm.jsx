@@ -1,14 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { peopleService } from '../../services/peopleService'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const EMPTY = {
-  name: '',
-  email: '',
-  phone: '',
-  occupation: '',
-  company: '',
-  location: '',
-  notes: '',
-  skills: [],
+  name: '', email: '', phone: '', occupation: '',
+  company: '', location: '', notes: '', skills: [],
 }
 
 export default function PersonForm({ onSubmit, initialData = null, onClose }) {
@@ -29,55 +26,64 @@ export default function PersonForm({ onSubmit, initialData = null, onClose }) {
   const [skillInput, setSkillInput] = useState('')
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(
+    initialData?.photo_url
+      ? (initialData.photo_url.startsWith('http') ? initialData.photo_url : `${API_BASE}${initialData.photo_url}`)
+      : null
+  )
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const nameRef = useRef(null)
+  const photoInputRef = useRef(null)
 
-  useEffect(() => {
-    nameRef.current?.focus()
-  }, [])
+  useEffect(() => { nameRef.current?.focus() }, [])
 
-  const validate = () => {
-    const e = {}
-    if (!form.name.trim()) e.name = 'Name is required'
-    return e
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }))
+    setForm(prev => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }))
   }
 
   const addSkill = () => {
     const skill = skillInput.trim()
     if (skill && !form.skills.includes(skill)) {
-      setForm((prev) => ({ ...prev, skills: [...prev.skills, skill] }))
+      setForm(prev => ({ ...prev, skills: [...prev.skills, skill] }))
     }
     setSkillInput('')
   }
 
-  const removeSkill = (skill) => {
-    setForm((prev) => ({ ...prev, skills: prev.skills.filter((s) => s !== skill) }))
-  }
+  const removeSkill = (skill) =>
+    setForm(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }))
 
   const handleSkillKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addSkill()
-    }
+    if (e.key === 'Enter') { e.preventDefault(); addSkill() }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length) { setErrors(errs); return }
+    if (!form.name.trim()) { setErrors({ name: 'Name is required' }); return }
     setSubmitting(true)
     try {
       const payload = { ...form }
-      Object.keys(payload).forEach((k) => {
-        if (payload[k] === '') payload[k] = null
-      })
+      Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null })
       payload.skills = form.skills
-      await onSubmit(payload)
+      const savedPerson = await onSubmit(payload)
+
+      // Upload photo if one was selected and we have a person id
+      if (photoFile && savedPerson?.id) {
+        setUploadingPhoto(true)
+        try {
+          await peopleService.uploadPhoto(savedPerson.id, photoFile)
+        } catch { /* photo upload failure is non-blocking */ }
+        setUploadingPhoto(false)
+      }
       onClose()
     } catch (err) {
       setErrors({ submit: err.response?.data?.detail || 'Something went wrong' })
@@ -87,168 +93,162 @@ export default function PersonForm({ onSubmit, initialData = null, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {initialData ? 'Edit Person' : 'Add Person'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors text-xl leading-none"
-          >
-            ×
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-head">
+          <span className="modal-title">{initialData ? 'Edit person' : 'Add person'}</span>
+          <button className="icon-btn" onClick={onClose}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {errors.submit && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{errors.submit}</p>
-          )}
+        <div className="modal-body">
+          <form onSubmit={handleSubmit} id="person-form">
+            {errors.submit && (
+              <div style={{
+                marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+                background: 'oklch(0.70 0.18 25 / 0.12)',
+                border: '1px solid oklch(0.70 0.18 25 / 0.35)',
+                fontSize: 13, color: 'var(--bad)',
+              }}>
+                {errors.submit}
+              </div>
+            )}
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Name <span className="text-red-500">*</span>
+            {/* Photo upload */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+              <div
+                onClick={() => photoInputRef.current?.click()}
+                style={{
+                  width: 72, height: 72, borderRadius: '50%', cursor: 'pointer',
+                  background: photoPreview ? 'transparent' : 'var(--surface-2)',
+                  border: '2px dashed var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden', flexShrink: 0, position: 'relative',
+                  transition: 'border-color .15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--text-dim)' }}>
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                )}
+                <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange}/>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-mid)', marginBottom: 4 }}>Profile photo</div>
+                <button type="button" className="btn-ghost small" onClick={() => photoInputRef.current?.click()}>
+                  {photoPreview ? 'Change photo' : 'Upload photo'}
+                </button>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    className="link-btn"
+                    style={{ marginLeft: 10 }}
+                    onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
+                  >
+                    Remove
+                  </button>
+                )}
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>JPG, PNG or WebP · max 5 MB</div>
+              </div>
+            </div>
+
+            <div className="form-section-title">Identity</div>
+
+            <label className="field">
+              <span>Name <span style={{ color: 'var(--bad)' }}>*</span></span>
+              <input
+                ref={nameRef}
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Full name"
+                style={errors.name ? { borderColor: 'var(--bad)' } : {}}
+              />
+              {errors.name && <span style={{ fontSize: 11, color: 'var(--bad)' }}>{errors.name}</span>}
             </label>
-            <input
-              ref={nameRef}
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Full name"
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-                errors.name ? 'border-red-400' : 'border-gray-300'
-              }`}
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="email@example.com"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
+            <div className="form-row">
+              <label className="field" style={{ margin: 0 }}>
+                <span>Occupation</span>
+                <input name="occupation" value={form.occupation} onChange={handleChange} placeholder="Software Engineer"/>
+              </label>
+              <label className="field" style={{ margin: 0 }}>
+                <span>Company</span>
+                <input name="company" value={form.company} onChange={handleChange} placeholder="Acme Inc."/>
+              </label>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="+1 234 567 8900"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Occupation</label>
-              <input
-                name="occupation"
-                value={form.occupation}
-                onChange={handleChange}
-                placeholder="Software Engineer"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Company</label>
-              <input
-                name="company"
-                value={form.company}
-                onChange={handleChange}
-                placeholder="Acme Inc."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              />
-            </div>
-          </div>
+            <div className="form-section-title">Contact</div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
-            <input
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              placeholder="City, Country"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            />
-          </div>
+            <div className="form-row">
+              <label className="field" style={{ margin: 0 }}>
+                <span>Email</span>
+                <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="email@example.com"/>
+              </label>
+              <label className="field" style={{ margin: 0 }}>
+                <span>Phone</span>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="+1 234 567 8900"/>
+              </label>
+            </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Skills</label>
-            <div className="flex gap-2">
+            <label className="field">
+              <span>Location</span>
+              <input name="location" value={form.location} onChange={handleChange} placeholder="City, Country"/>
+            </label>
+
+            <div className="form-section-title">Skills</div>
+
+            <div className="skill-input">
               <input
                 value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
+                onChange={e => setSkillInput(e.target.value)}
                 onKeyDown={handleSkillKeyDown}
                 placeholder="Type a skill and press Enter"
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                style={{ height: 38, padding: '0 12px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, outline: 0, color: 'var(--text)' }}
               />
-              <button
-                type="button"
-                onClick={addSkill}
-                className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
-              >
-                Add
-              </button>
+              <button type="button" className="btn-ghost" onClick={addSkill}>Add</button>
             </div>
             {form.skills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {form.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"
-                  >
+              <div className="chip-row editable">
+                {form.skills.map(skill => (
+                  <span key={skill} className="chip removable">
                     {skill}
-                    <button
-                      type="button"
-                      onClick={() => removeSkill(skill)}
-                      className="hover:text-blue-900 leading-none"
-                    >
-                      ×
-                    </button>
+                    <button type="button" onClick={() => removeSkill(skill)}>×</button>
                   </span>
                 ))}
               </div>
             )}
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              placeholder="How you know this person, context..."
-              rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-            />
-          </div>
+            <div className="form-section-title">Notes</div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
-            >
-              {submitting ? 'Saving…' : initialData ? 'Save Changes' : 'Add Person'}
-            </button>
-          </div>
-        </form>
+            <label className="field">
+              <span>Notes</span>
+              <textarea
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                placeholder="How you know this person, context…"
+                rows={3}
+              />
+            </label>
+          </form>
+        </div>
+
+        <div className="modal-foot">
+          <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="submit" form="person-form" className="btn-primary" disabled={submitting || uploadingPhoto}>
+            {uploadingPhoto ? 'Uploading photo…' : submitting ? 'Saving…' : initialData ? 'Save changes' : 'Add person'}
+          </button>
+        </div>
       </div>
     </div>
   )
