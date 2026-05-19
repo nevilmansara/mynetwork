@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import init_driver, close_driver, create_indexes, get_db
-from routers import auth, people, connections, search
+from routers import auth, people, connections, search, stats, import_export
 from routers.connections import graph_router
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +40,8 @@ app.include_router(people.router, prefix="/people", tags=["people"])
 app.include_router(connections.router, prefix="/connections", tags=["connections"])
 app.include_router(graph_router, prefix="/graph", tags=["graph"])
 app.include_router(search.router, prefix="/search", tags=["search"])
+app.include_router(stats.router, prefix="/stats", tags=["stats"])
+app.include_router(import_export.router, prefix="/import-export", tags=["import-export"])
 
 
 @app.get("/health")

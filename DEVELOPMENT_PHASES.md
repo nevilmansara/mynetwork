@@ -9,13 +9,13 @@
 
 Do these manually before starting development:
 
-- [ ] Install Node.js 20+ from https://nodejs.org
-- [ ] Install Python 3.11+ from https://python.org
-- [ ] Install Docker Desktop from https://docker.com
-- [ ] Install Claude Code: `npm install -g @anthropic/claude-code`
-- [ ] Create project folder: `mkdir mynetwork && cd mynetwork`
-- [ ] Initialize git: `git init`
-- [ ] Copy all `.md` files into the `mynetwork/` folder
+- Install Node.js 20+ from [https://nodejs.org](https://nodejs.org)
+- Install Python 3.11+ from [https://python.org](https://python.org)
+- Install Docker Desktop from [https://docker.com](https://docker.com)
+- Install Claude Code: `npm install -g @anthropic/claude-code`
+- Create project folder: `mkdir mynetwork && cd mynetwork`
+- Initialize git: `git init`
+- Copy all `.md` files into the `mynetwork/` folder
 
 ---
 
@@ -24,6 +24,7 @@ Do these manually before starting development:
 **Goal:** Get empty project structure running. No features yet.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Then:
 
@@ -55,9 +56,10 @@ Do not implement any features. Just structure and config files.
 ```
 
 **Done When:**
-- [ ] `cd frontend && npm run dev` → shows blank Vite React page
-- [ ] `cd backend && uvicorn main:app --reload` → server starts (may show DB error, that's ok)
-- [ ] `cd docker && docker-compose up` → Neo4j starts, accessible at localhost:7474
+
+- `cd frontend && npm run dev` → shows blank Vite React page
+- `cd backend && uvicorn main:app --reload` → server starts (may show DB error, that's ok)
+- `cd docker && docker-compose up` → Neo4j starts, accessible at localhost:7474
 
 ---
 
@@ -66,6 +68,7 @@ Do not implement any features. Just structure and config files.
 **Goal:** Backend connects to Neo4j, health endpoint works.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Then:
 
@@ -92,9 +95,10 @@ Refer to CLAUDE.md for env variable names and ARCHITECTURE.md for connection det
 ```
 
 **Done When:**
-- [ ] `GET localhost:8000/health` returns `{ "api": "ok", "database": "ok" }`
-- [ ] `GET localhost:8000/docs` shows FastAPI auto-docs page
-- [ ] Frontend shows both green "connected" badges
+
+- `GET localhost:8000/health` returns `{ "api": "ok", "database": "ok" }`
+- `GET localhost:8000/docs` shows FastAPI auto-docs page
+- Frontend shows both green "connected" badges
 
 ---
 
@@ -103,6 +107,7 @@ Refer to CLAUDE.md for env variable names and ARCHITECTURE.md for connection det
 **Goal:** Users can register, login, and stay logged in.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Then implement authentication:
 
@@ -181,11 +186,12 @@ Style all auth pages cleanly with Tailwind. Center the form card on screen.
 ```
 
 **Done When:**
-- [ ] Can register a new user
-- [ ] Can login with registered user
-- [ ] JWT stored in localStorage
-- [ ] Protected routes redirect to /login if not authenticated
-- [ ] /auth/me returns current user when logged in
+
+- Can register a new user
+- Can login with registered user
+- JWT stored in localStorage
+- Protected routes redirect to /login if not authenticated
+- /auth/me returns current user when logged in
 
 ---
 
@@ -194,6 +200,7 @@ Style all auth pages cleanly with Tailwind. Center the form card on screen.
 **Goal:** Add, view, edit, delete people in the network.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Implement People CRUD:
 
@@ -263,12 +270,13 @@ Make cards visually appealing with Tailwind. Use color-coded skill badges.
 ```
 
 **Done When:**
-- [ ] Can add a person with all fields
-- [ ] Can edit a person
-- [ ] Can delete a person
-- [ ] People list shows all added people
-- [ ] Search/filter works on people list
-- [ ] Person detail page shows all info
+
+- Can add a person with all fields
+- Can edit a person
+- Can delete a person
+- People list shows all added people
+- Search/filter works on people list
+- Person detail page shows all info
 
 ---
 
@@ -277,6 +285,7 @@ Make cards visually appealing with Tailwind. Use color-coded skill badges.
 **Goal:** Connect people to each other with typed relationships.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Implement Connections/Relationships:
 
@@ -341,10 +350,11 @@ FRONTEND:
 ```
 
 **Done When:**
-- [ ] Can connect two people together
-- [ ] Can see all connections on a person's profile
-- [ ] Can remove a connection
-- [ ] Connections are bidirectional (shown on both profiles)
+
+- Can connect two people together
+- Can see all connections on a person's profile
+- Can remove a connection
+- Connections are bidirectional (shown on both profiles)
 
 ---
 
@@ -353,6 +363,7 @@ FRONTEND:
 **Goal:** Interactive network visualization using react-force-graph.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md and ARCHITECTURE.md fully. Implement visual graph:
 
@@ -421,11 +432,12 @@ Make the graph visually impressive. Dark background (#111827) for the graph area
 ```
 
 **Done When:**
-- [ ] Graph shows all people as nodes
-- [ ] Graph shows connections as edges
-- [ ] Clicking a node shows their profile panel
-- [ ] Hovering highlights connections
-- [ ] Color coding by occupation works
+
+- Graph shows all people as nodes
+- Graph shows connections as edges
+- Clicking a node shows their profile panel
+- Hovering highlights connections
+- Color coding by occupation works
 
 ---
 
@@ -434,6 +446,7 @@ Make the graph visually impressive. Dark background (#111827) for the graph area
 **Goal:** Find people by skill and show path to reach them.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md and ARCHITECTURE.md fully. Implement search and pathfinding:
 
@@ -495,11 +508,12 @@ FRONTEND:
 ```
 
 **Done When:**
-- [ ] Search by name returns correct people
-- [ ] Search by skill returns people with that skill
-- [ ] Path search shows shortest path from self to skill
-- [ ] Path highlighted on graph when "View on Graph" clicked
-- [ ] Results sorted by shortest path
+
+- Search by name returns correct people
+- Search by skill returns people with that skill
+- Path search shows shortest path from self to skill
+- Path highlighted on graph when "View on Graph" clicked
+- Results sorted by shortest path
 
 ---
 
@@ -508,6 +522,7 @@ FRONTEND:
 **Goal:** Professional home screen + UX polish.
 
 **Claude Code Prompt:**
+
 ```
 Read CLAUDE.md fully. Implement dashboard and polish the app:
 
@@ -564,16 +579,18 @@ Read CLAUDE.md fully. Implement dashboard and polish the app:
 ```
 
 **Done When:**
-- [ ] Dashboard shows network stats
-- [ ] All empty states look good
-- [ ] Toast notifications work
-- [ ] App feels polished and professional
+
+- Dashboard shows network stats
+- All empty states look good
+- Toast notifications work
+- App feels polished and professional
 
 ---
 
 ## Phase 9 — CSV Import & Export (Optional)
 
 **Claude Code Prompt:**
+
 ```
 Add import/export functionality:
 
@@ -597,6 +614,7 @@ Add import/export functionality:
 ## Phase 10 — Docker Everything (Optional)
 
 **Claude Code Prompt:**
+
 ```
 Dockerize the full application for easy deployment:
 
@@ -619,7 +637,9 @@ Dockerize the full application for easy deployment:
 ## Quick Reference — Start Each Phase
 
 Before starting any phase, tell Claude Code:
+
 ```
 Read CLAUDE.md fully. We are now working on Phase [N]: [Phase Name].
 [Paste the prompt from that phase above]
 ```
+

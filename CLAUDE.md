@@ -404,9 +404,9 @@ VITE_API_BASE_URL=http://localhost:8080
 
 > **UPDATE THIS SECTION** when starting each new phase.
 
-**Current Phase:** Phase 6 — Graph Visualization (Complete)  
-**Last Completed:** connectionService.getGraph(), NetworkContext loadGraphData + graph refresh on addConnection/deleteConnection, graphHelpers (getNodeColor/getLinkColor/getNodeRadius with rgba), GraphControls (zoom in/out/fit/labels toggle), NetworkGraph (ForceGraph2D, custom canvas node rendering, hover highlight with neighbor dimming, self-node ring, responsive resize), GraphPage (graph + side panel on node click, legend, node/connection count badge)  
-**Next Task:** Phase 7 — Search & Pathfinding (search by skill/occupation, shortest path visualization)
+**Current Phase:** Phase 9 — CSV Import & Export (Complete)  
+**Last Completed:** import_export_service (export_people_csv → CSV string, import_people_csv → duplicate detection by name+email, semicolon-separated skills, row-level errors), GET /import-export/export (StreamingResponse, attachment download), POST /import-export/import (UploadFile, 5 MB limit, UTF-8-BOM safe), importExportService.js (exportCSV blob, importCSV multipart, downloadTemplateCSV frontend-only, triggerCSVDownload), PeoplePage updated with Export button, Import button, ImportModal (drag-and-drop + file picker, template download, import result summary), Import CSV shortcut in empty state  
+**Next Task:** Phase 10 — (TBD)
 
 ---
 

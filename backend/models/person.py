@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -41,3 +42,16 @@ class PersonResponse(BaseModel):
     connections_count: int = 0
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+
+class PathNode(BaseModel):
+    id: str
+    name: str
+    occupation: Optional[str] = None
+    skills: List[str] = []
+    is_self: bool = False
+
+
+class PathResult(BaseModel):
+    path: List[PathNode]
+    hops: int

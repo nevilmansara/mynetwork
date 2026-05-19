@@ -2,10 +2,11 @@ import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { getNodeColor, getLinkColor, getNodeRadius } from '../../utils/graphHelpers'
 
-export default function NetworkGraph({ graphData, onNodeClick, showLabels, fgRef }) {
+export default function NetworkGraph({ graphData, onNodeClick, showLabels, fgRef, pathNodeIds }) {
   const containerRef = useRef()
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const [hoveredNode, setHoveredNode] = useState(null)
+  const pathSet = pathNodeIds ? new Set(pathNodeIds) : null
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -40,16 +41,30 @@ export default function NetworkGraph({ graphData, onNodeClick, showLabels, fgRef
     (node, ctx, globalScale) => {
       const radius = getNodeRadius(node.val)
       const isLit = !highlightNodes || highlightNodes.has(node.id)
+      const inPath = pathSet && pathSet.has(node.id)
       const alpha = isLit ? 1 : 0.12
 
-      // Fill circle
+      // Path highlight: yellow-orange fill overrides occupation color
       ctx.beginPath()
       ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI)
-      ctx.fillStyle = getNodeColor(node.occupation, alpha)
+      if (inPath) {
+        ctx.fillStyle = `rgba(251,146,60,${alpha})`  // orange-400
+      } else {
+        ctx.fillStyle = getNodeColor(node.occupation, alpha)
+      }
       ctx.fill()
 
+      // Path node outer ring (amber glow)
+      if (inPath) {
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, radius + 4, 0, 2 * Math.PI)
+        ctx.strokeStyle = `rgba(245,158,11,${isLit ? 0.8 : 0.1})`
+        ctx.lineWidth = 2.5
+        ctx.stroke()
+      }
+
       // "You" ring for self node
-      if (node.is_self) {
+      if (node.is_self && !inPath) {
         ctx.beginPath()
         ctx.arc(node.x, node.y, radius + 3, 0, 2 * Math.PI)
         ctx.strokeStyle = getNodeColor(node.occupation, isLit ? 0.6 : 0.1)
@@ -57,18 +72,18 @@ export default function NetworkGraph({ graphData, onNodeClick, showLabels, fgRef
         ctx.stroke()
       }
 
-      // Label — always for self, always when showLabels, fade otherwise
+      // Label — always for self/path nodes, or when showLabels/zoomed
       const labelAlpha = isLit ? 1 : 0.12
-      if (showLabels || node.is_self || globalScale > 2) {
+      if (showLabels || node.is_self || inPath || globalScale > 2) {
         const fontSize = Math.min(13, Math.max(7, 11 / globalScale))
-        ctx.font = `${node.is_self ? '600 ' : ''}${fontSize}px Inter, system-ui, sans-serif`
+        ctx.font = `${node.is_self || inPath ? '600 ' : ''}${fontSize}px Inter, system-ui, sans-serif`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
         ctx.fillStyle = `rgba(17,24,39,${labelAlpha})`
         ctx.fillText(node.name, node.x, node.y + radius + 2)
       }
     },
-    [highlightNodes, showLabels]
+    [highlightNodes, showLabels, pathSet]
   )
 
   const nodePointerAreaPaint = useCallback((node, color, ctx) => {

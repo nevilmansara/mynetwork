@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useNetworkContext } from '../context/NetworkContext'
 import NetworkGraph from '../components/graph/NetworkGraph'
 import GraphControls from '../components/graph/GraphControls'
@@ -6,8 +7,13 @@ import PersonProfile from '../components/people/PersonProfile'
 
 export default function GraphPage() {
   const { graphData, people, loadGraphData, loadPeople, updatePerson } = useNetworkContext()
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [selectedPersonId, setSelectedPersonId] = useState(null)
+
+  const pathNodeIds = searchParams.get('highlight')
+    ? searchParams.get('highlight').split(',').filter(Boolean)
+    : null
   const [showLabels, setShowLabels] = useState(false)
   const fgRef = useRef()
 
@@ -53,6 +59,7 @@ export default function GraphPage() {
             onNodeClick={handleNodeClick}
             showLabels={showLabels}
             fgRef={fgRef}
+            pathNodeIds={pathNodeIds}
           />
         )}
 
